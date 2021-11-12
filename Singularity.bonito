@@ -1,5 +1,5 @@
 Bootstrap: docker
-From:  nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
+From:  nvidia/cuda:11.1.1-cudnn8-devel-ubuntu20.04
 
 %runscript
     bonito "$@"
@@ -15,14 +15,35 @@ From:  nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
     add-apt-repository universe
 
     apt-get update
-    apt-get -y install python3-pip
+    apt-get -y install python3-pip g++
 
+    #install correct numpy version
+    python3 -m pip install numpy==1.17.5
+    python3 -m pip install certifi==2020.06.20
+
+    #pip3 install cupy-cuda111
+    pip3 install cupy-cuda111 
+
+    #install pytorch
+
+
+    #build seqdist
+    cd /
+    git clone https://github.com/davidcpage/seqdist.git
+    cd seqdist
+    sed -i 's/cupy-cuda102/cupy-cuda111/' settings.ini
+    python3 setup.py install
+
+    #install bonito
     git clone https://github.com/nanoporetech/bonito.git
     cd bonito
+    mv requirements.txt requirements.tmp
+    grep -v -E 'numpy|seqdist|cupy' requirements.tmp > requirements.txt
+    sed -i 's/genomeworks-cuda-10-2==2021.2.2/genomeworks-cuda-11-1==2021.2.2/' requirements.txt
     pip3 install --upgrade pip
     pip3 install -r requirements.txt
     python3 setup.py develop
-    
+
     ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
     LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs/:$LD_LIBRARY_PATH
     bonito download --models --latest
@@ -33,7 +54,5 @@ From:  nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
 
 
 
-%test
-    
 
 
